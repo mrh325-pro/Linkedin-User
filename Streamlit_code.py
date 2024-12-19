@@ -3,9 +3,6 @@
 
 # In[ ]:
 
-
-
-
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -59,17 +56,10 @@ education_labels = {
     8: "Postgraduate or professional degree"
 }
 
-# Load data directly
+# Load the social media usage data (no user upload required)
 try:
     s = pd.read_csv("social_media_usage.csv")
-except FileNotFoundError:
-    s = None
-    st.error("The data file 'social_media_usage.csv' could not be found. Please check the file path.")
-except Exception as e:
-    s = None
-    st.error(f"An error occurred while loading the data: {e}")
 
-if s is not None:
     # Filter and clean data
     filtered_data = s[(s['income'] <= 9) & (s['educ2'] <= 8) & (s['age'] <= 98)]
     ss = filtered_data[['income', 'educ2', 'par', 'marital', 'sex', 'age']].copy()
@@ -102,5 +92,6 @@ if s is not None:
         result = "LinkedIn User" if prediction == 1 else "Not a LinkedIn User"
         st.write(f"**Prediction:** {result}")
         st.write(f"**Probability of LinkedIn Usage:** {probability * 100:.1f}%")
-else:
-    st.warning("Please upload a valid CSV file or ensure the data file is accessible.")
+        
+except Exception as e:
+    st.error(f"An error occurred while loading or processing the data: {e}")
