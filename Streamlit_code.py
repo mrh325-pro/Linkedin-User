@@ -4,12 +4,18 @@
 # In[ ]:
 
 
+
+
 import streamlit as st
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+
+# Helper function for cleaning LinkedIn usage column
+def clean_sm(column):
+    # Convert column to binary: 1 for LinkedIn users, 0 otherwise
+    return np.where(column == 1, 1, 0)
 
 # Prediction function
 def predict_linkedin_usage(model, income, education, parent, married, female, age):
@@ -53,22 +59,27 @@ education_labels = {
     8: "Postgraduate or professional degree"
 }
 
-# Load your data
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+# Load data directly
+try:
+    s = pd.read_csv("social_media_usage.csv")
+except FileNotFoundError:
+    s = None
+    st.error("The data file 'social_media_usage.csv' could not be found. Please check the file path.")
+except Exception as e:
+    s = None
+    st.error(f"An error occurred while loading the data: {e}")
 
-if uploaded_file:
-    # Load data
-    data = pd.read_csv(uploaded_file)
-
-    # Data preprocessing
-    data = data[(data['income'] <= 9) & (data['educ2'] <= 8) & (data['age'] <= 98)]
-    data.rename(columns={'educ2': 'education', 'par': 'parent', 'marital': 'married', 'sex': 'female'}, inplace=True)
-    data['female'] = np.where(data['female'] == 2, 1, 0)
-    data['sm_li'] = np.where(data['web1h'] == 1, 1, 0)
+if s is not None:
+    # Filter and clean data
+    filtered_data = s[(s['income'] <= 9) & (s['educ2'] <= 8) & (s['age'] <= 98)]
+    ss = filtered_data[['income', 'educ2', 'par', 'marital', 'sex', 'age']].copy()
+    ss.rename(columns={'educ2': 'education', 'par': 'parent', 'marital': 'married', 'sex': 'female'}, inplace=True)
+    ss['female'] = np.where(ss['female'] == 2, 1, 0)
+    ss['sm_li'] = clean_sm(filtered_data['web1h'])
 
     # Features and target
-    y = data['sm_li']
-    X = data[['income', 'education', 'parent', 'married', 'female', 'age']]
+    y = ss['sm_li']
+    X = ss[['income', 'education', 'parent', 'married', 'female', 'age']]
 
     # Train-test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -92,5 +103,4 @@ if uploaded_file:
         st.write(f"**Prediction:** {result}")
         st.write(f"**Probability of LinkedIn Usage:** {probability * 100:.1f}%")
 else:
-    st.warning("Please upload a CSV file to proceed.")
-
+    st.warning("Please upload a valid CSV file or ensure the data file is accessible.")
